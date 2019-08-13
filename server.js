@@ -1,11 +1,12 @@
 var express = require('express')
 var app = express()
 var mongoose = require('mongoose')
-
+var url ='mongodb://localhost:27017/';
+var useDb = 'CRUD-tool';
 //mongoose.connect('mongodb://heroku_674vnd6l:qvie32tkbjru83t21rsoml39ml@ds019638.mlab.com:19638/heroku_674vnd6l',
  //{useNewUrlParser: true});
 
-mongoose.connect('mongodb://localhost:27017/CRUD-tool', {useNewUrlParser: true});
+var conn = mongoose.connect('mongodb://localhost:27017/CRUD-tool', {useNewUrlParser: true});
 
 var pageSchema = mongoose.Schema({
 	title: String
@@ -33,6 +34,7 @@ app.use(function(req, res, next) {
 var tableService = require(
 	'./services/table.service.server.js')
 
-tableService(app)
+
+tableService(app,url,useDb)
 
 app.listen(process.env.PORT || 3000)
