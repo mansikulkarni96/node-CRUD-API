@@ -122,7 +122,54 @@ module.exports = function (app,url,useDb) {
 
 	}
 
+	function deleteTableRecord(req,res) {
+		var MongoClient = require('mongodb').MongoClient;
+		MongoClient.connect(url, function(err, db) {
+  		if (err) throw err;
+  		var dbo = db.db(useDb);
+  		dbo.listCollections().toArray(function (err, collectionNames) {
+      			if (err) {
+        			console.log(err);
+        			return;
+      			}
+        		 console.log(collectionNames);
+        		 var array= collectionNames.filter( collec => collec.name===req.params['table'])
+        		 var body = req.body;
 
+				if(array.length ===0)
+	        		{
+	        			res.send(null);
+	        		}
+        		else{
+	  				var query = {"_id": mongo.ObjectId(req.params['id'])};
+	        			dbo.collection(req.params['table']).deleteOne(query, function(err, obj) {
+	    				if (err) throw err;
+	    				console.log("1 document deleted");  
+	    				res.send("document deleted")			
+	    				db.close();
+	  					});
+        		}
+			});
+  	});
+
+	}
+
+	function deleteTable(req,res) {
+		var MongoClient = require('mongodb').MongoClient;
+		MongoClient.connect(url, function(err, db) {
+  		if (err) throw err;
+  		var dbo = db.db(useDb);
+  		dbo.collection(req.params['table']).drop(function(err, ok) {
+    	if (err) throw err;
+    	if (ok) console.log("Collection deleted");
+	    res.send("Collection deleted")			
+	    db.close();
+	  	});
+        });
+	}
+
+	app.delete("/api/:table", deleteTable)
+	app.delete("/api/:table/:id", deleteTableRecord)
 	app.get("/api/:table/:id", findTableRecord)
 	app.get("/api/:table", findTable)
 	app.post("/api/:table", createTable);
