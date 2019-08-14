@@ -1,10 +1,11 @@
+var mongoose = require('mongoose')
+
 module.exports = function (app,url,useDb) {
 
 	function createTable(req, res) {
 		
 		var MongoClient = require('mongodb').MongoClient;
-		//var url = "mongodb://localhost:27017/";
-		var array=[];
+		
 		MongoClient.connect(url, function(err, db) {
   			if (err) throw err;
   			var dbo = db.db(useDb);
@@ -14,26 +15,27 @@ module.exports = function (app,url,useDb) {
         			return;
       			}
         		console.log(collectionNames);
-        		 array= collectionNames.filter( collec => collec.name===req.params['table'])
+        		 var array= collectionNames.filter( collec => collec.name===req.params['table'])
+        		 var body = req.body;
+
 				if(array.length ===0)
         		{
-        			dbo.createCollection(req.params['table'], function(err, res) {
-    				if (err) throw err;
-    				console.log("Collection created!");
- 	 				});
-        			
+        			var itemSchema = new mongoose.Schema({}, { strict: false, collection: req.params['table'] });
+					var Item = mongoose.model(req.params['table'], itemSchema);
+					var item = new Item(body);
+					item.save();
         		}
         		else{
-        			console.log("collection Exists")
+        			console.log("collection Exists");
+        			console.log(JSON.stringify(body));
+        			const collection = dbo.collection(req.params['table']);
+        			collection.insert(body);
+        			res.send(body);
+        			return;
         		}
-        		
-        		
-        		
     		});
-    		
-        		
 		});
 	}
-	//console.log(conn);
-	app.get("/api/:table", createTable);
+
+	app.post("/api/:table", createTable);
 }
