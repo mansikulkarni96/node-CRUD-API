@@ -79,12 +79,20 @@ module.exports = function (app,url,useDb) {
         			res.send(null);
         		}
         		else{
-        			dbo.collection(req.params['table']).find({}).toArray(function(err, result) {
-    				if (err) throw err;
-    				console.log(result);
-    				db.close();
-    				res.send(result);
-  					});
+        			var queryKeys = Object.keys(req.query);
+        			if(queryKeys.length == 0)
+        			{
+        				dbo.collection(req.params['table']).find({}).toArray(function(err, result) {
+    					if (err) throw err;
+    					console.log(result);
+    					db.close();
+    					res.send(result);
+  						});
+        			}
+        			else
+        			{
+        				findByPredicates(req,res);
+        			}
         		}	
 			});
 
@@ -92,7 +100,7 @@ module.exports = function (app,url,useDb) {
 	}
 
 
-	function findByPredicates(req,res) {
+	/*function findByPredicates(req,res) {
 		var MongoClient = require('mongodb').MongoClient;
 		MongoClient.connect(url, function(err, db) {
   		if (err) throw err;
@@ -125,7 +133,7 @@ module.exports = function (app,url,useDb) {
 			});
 
 		});
-	}
+	}*/
 
 
 	function findTableRecord(req,res) {
@@ -158,6 +166,94 @@ module.exports = function (app,url,useDb) {
 			});
   	});
 
+	}
+
+	function findByPredicates(req,res){
+		var MongoClient = require('mongodb').MongoClient;
+		MongoClient.connect(url, function(err, db) {
+			if (err) throw err;
+  			var dbo = db.db(useDb);
+  			var keys = Object.keys(req.query);
+  			var values = Object.values(req.query);
+  			var ret = '';
+  			var queryObj = {};
+  			var operatorIndex = {'>':'$gt','>=':'$gte','<':'$lt','<=':'$lte','!=':'$ne'};
+  			for(var i=0;i<keys.length;i++)
+  			{
+  				var key = keys[i];
+  				var param = key;
+  				var operator = '=';
+  				var value = values[i];
+  				if(key.indexOf('>') >= 0)
+  				{
+  					operator = '>=';
+  					var spArr = key.split('>');
+  					value = values[i];
+  					if( spArr[1] != '' )
+  					{
+  						operator = '>';
+  						value = spArr[1];
+  					}
+  					param = spArr[0];
+  				}
+  				else if(key.indexOf('<') >= 0)
+  				{
+  					var operator = '<=';
+  					var spArr = key.split('<');
+  					var value = values[i];
+  					if( spArr[1] != '' )
+  					{
+  						operator = '<';
+  						value = spArr[1];
+  					}
+  					param = spArr[0];
+  						//ret+=spArr[0]+' '+operator+' '+value;
+  				}
+  				else if(key.indexOf('!') >= 0)
+  				{
+  					var operator = '!=';
+  					var spArr = key.split('!');
+  					var value = values[i];
+  					param = spArr[0];
+  						//ret+=spArr[0]+' '+operator+' '+value;
+  				}
+  					/*else
+  					{
+  						var operator = '=';
+  						var value = values[i];
+  						ret+=key+' '+operator+' '+value;
+  					}*/
+  				ret+=param+' '+operator+' '+value+"\n";
+  				if(value.indexOf("'") >= 0)
+  				{
+  					value = value.replace(/'/g,"");
+  				}
+  				else
+  				{
+  					value = parseInt(value);
+  				}
+  				if( operator == '=' )
+  				{
+  					queryObj[param] = value;
+  				}
+  				else
+  				{
+  					if(queryObj[param] == null)
+  					{
+  						queryObj[param] = {};
+  					}
+  					queryObj[param][operatorIndex[operator]] = value;
+  				}
+  				//ret+=values[i]+'\n';
+  			}
+  			console.log(ret);
+  			console.log(queryObj);
+  			//var query = {"salary": {'$gt':900}};
+  			dbo.collection(req.params['table']).find(queryObj).toArray(function(err,result){
+  				if(err) throw err;
+  				res.send(result);
+  			});
+		});
 	}
 
 	function updateTableRecord(req,res) {
@@ -303,6 +399,7 @@ module.exports = function (app,url,useDb) {
 		  });
 		});
 	}
+
 
 
 	function createMappingTable2(req, res) {
