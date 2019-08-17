@@ -357,12 +357,10 @@ module.exports = function (app,url,useDb) {
 	        			res.send(null);
 	        		}
         		else{
-
 	  				var query = {"_id": req.params['id']};
 	  				var newvalues = { $set: body};
 	        			dbo.collection(req.params['table']).updateOne(query, newvalues, function(err, result) {
-
-	        				console.log(JSON.stringify(result));
+	        			console.log(JSON.stringify(result));
 	        			var  val = result['result']['nModified'];
 	        			if(val === 0)
 	        			{
@@ -407,8 +405,11 @@ module.exports = function (app,url,useDb) {
 	  				var query = {"_id": req.params['id']};
 	        			dbo.collection(req.params['table']).deleteOne(query, function(err, obj) {
 	    				if (err) throw err;
-	    				console.log("1 document deleted");  
-	    				res.send("document deleted")			
+	    				if(obj == null){
+	    					res.send(null);
+	    				}
+	    				console.log(obj);
+	    				res.send(" 1 document deleted")			
 	    				db.close();
 	  					});
         		}
