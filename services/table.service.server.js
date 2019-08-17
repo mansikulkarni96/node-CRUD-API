@@ -405,6 +405,13 @@ module.exports = function (app,url,useDb) {
 	  				var query = {"_id": req.params['id']};
 	        			dbo.collection(req.params['table']).deleteOne(query, function(err, obj) {
 	    				if (err) throw err;
+	    				var  val = obj['opts']['deletedCount'];
+	    				console.log(val);
+	        			if(val === 0)
+	        			{
+
+	        				res.send(null);
+	        			}
 	    				if(obj == null){
 	    					res.send(null);
 	    				}
