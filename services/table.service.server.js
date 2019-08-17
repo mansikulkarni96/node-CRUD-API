@@ -188,7 +188,7 @@ module.exports = function (app,url,useDb) {
   			var keys = Object.keys(req.query);
   			var values = Object.values(req.query);
   			var ret = '';
-  			var queryObj = {};
+  			//var queryObj = {};
   			var operatorIndex = {'>':'$gt','>=':'$gte','<':'$lt','<=':'$lte','!=':'$ne'};
   			for(var i=0;i<keys.length;i++)
   			{
@@ -257,6 +257,85 @@ module.exports = function (app,url,useDb) {
   			});
 		});
 	}
+
+	function twoTablePredicates(queryObj,tableName,req,res){
+		var MongoClient = require('mongodb').MongoClient;
+		MongoClient.connect(url, function(err, db) {
+			if (err) throw err;
+  			var dbo = db.db(useDb);
+  			var keys = Object.keys(req.query);
+  			var values = Object.values(req.query);
+  			var ret = '';
+  			//var queryObj = {};
+  			var operatorIndex = {'>':'$gt','>=':'$gte','<':'$lt','<=':'$lte','!=':'$ne'};
+  			for(var i=0;i<keys.length;i++)
+  			{
+  				var key = keys[i];
+  				var param = key;
+  				var operator = '=';
+  				var value = values[i];
+  				if(key.indexOf('>') >= 0)
+  				{
+  					operator = '>=';
+  					var spArr = key.split('>');
+  					value = values[i];
+  					if( spArr[1] != '' )
+  					{
+  						operator = '>';
+  						value = spArr[1];
+  					}
+  					param = spArr[0];
+  				}
+  				else if(key.indexOf('<') >= 0)
+  				{
+  					var operator = '<=';
+  					var spArr = key.split('<');
+  					var value = values[i];
+  					if( spArr[1] != '' )
+  					{
+  						operator = '<';
+  						value = spArr[1];
+  					}
+  					param = spArr[0];
+  				}
+  				else if(key.indexOf('!') >= 0)
+  				{
+  					var operator = '!=';
+  					var spArr = key.split('!');
+  					var value = values[i];
+  					param = spArr[0];
+  				}
+  				ret+=param+' '+operator+' '+value+"\n";
+  				if(value.indexOf("'") >= 0)
+  				{
+  					value = value.replace(/'/g,"");
+  				}
+  				else
+  				{
+  					value = parseInt(value);
+  				}
+  				if( operator == '=' )
+  				{
+  					queryObj[param] = value;
+  				}
+  				else
+  				{
+  					if(queryObj[param] == null)
+  					{
+  						queryObj[param] = {};
+  					}
+  					queryObj[param][operatorIndex[operator]] = value;
+  				}
+  			}
+  			console.log(ret);
+  			console.log(queryObj);
+  			dbo.collection(tableName).find(queryObj).toArray(function(err,result){
+  				if(err) throw err;
+  				res.send(result);
+  			});
+		});
+	}
+
 
 	function updateTableRecord(req,res) {
 		var MongoClient = require('mongodb').MongoClient;
@@ -380,9 +459,22 @@ module.exports = function (app,url,useDb) {
 	        dbo.collection(mappingTab).find(query).toArray( function(err, result) {
 	    	if (err) throw err;
 	    	var arr = result.map(value => value[tab2])
+	    	console.log(arr);
 	    	var resultArray= [];
 	    	var count =0;
-	    	 for(let val of arr) {
+	    	var query = {"_id":{$in:arr}};
+	    	var queryKeys = Object.keys(req.query);
+	    	if(queryKeys.length == 0)
+	    	{
+	    		dbo.collection(tab2).find(query).toArray(function(err,data){
+	    			resp.send(data);
+	    		});
+	    	}
+	    	else
+	    	{
+	    		twoTablePredicates(query,tab2,req,resp);
+	    	}
+	    	 /*for(let val of arr) {
 	    		var obj = val.toString();
 	    		console.log(obj );
 	    		var query = {"_id":val};
@@ -397,7 +489,7 @@ module.exports = function (app,url,useDb) {
 	    			resp.send(resultArray)
 	    		}
 			    });
-	    	}	
+	    	}*/	
 			});
   			});
     	});
