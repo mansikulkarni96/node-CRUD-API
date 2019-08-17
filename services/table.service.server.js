@@ -207,7 +207,6 @@ module.exports = function (app,url,useDb) {
   						value = spArr[1];
   					}
   					param = spArr[0];
-  						//ret+=spArr[0]+' '+operator+' '+value;
   				}
   				else if(key.indexOf('!') >= 0)
   				{
@@ -215,14 +214,7 @@ module.exports = function (app,url,useDb) {
   					var spArr = key.split('!');
   					var value = values[i];
   					param = spArr[0];
-  						//ret+=spArr[0]+' '+operator+' '+value;
   				}
-  					/*else
-  					{
-  						var operator = '=';
-  						var value = values[i];
-  						ret+=key+' '+operator+' '+value;
-  					}*/
   				ret+=param+' '+operator+' '+value+"\n";
   				if(value.indexOf("'") >= 0)
   				{
@@ -244,11 +236,9 @@ module.exports = function (app,url,useDb) {
   					}
   					queryObj[param][operatorIndex[operator]] = value;
   				}
-  				//ret+=values[i]+'\n';
   			}
   			console.log(ret);
   			console.log(queryObj);
-  			//var query = {"salary": {'$gt':900}};
   			dbo.collection(req.params['table']).find(queryObj).toArray(function(err,result){
   				if(err) throw err;
   				res.send(result);
@@ -291,8 +281,7 @@ module.exports = function (app,url,useDb) {
 	  					});
 	    				console.log("1 document updated"); 	
 	    						
-	  					});
-	  					
+	  					});			
         		}
 			});
   	});
@@ -381,24 +370,45 @@ module.exports = function (app,url,useDb) {
 		  if (err) throw err;
 		  var dbo = db.db(useDb);
 		  var tab = req.params['table1'];
-		 
-		  dbo.collection(tab).aggregate([
-		    { $lookup:
-		       {
-		         from: req.params['table2'],
-		         localField: 'commentId',
-		         foreignField: 'id',
-		         as: 'user_new_table'
-		       }
-		     }
-		    ]).toArray(function(err, res) {
-		    if (err) throw err;
-		    var result = res.filter( item => ((item['_id'].toString() === req.params['id1'])))
-		    resp.send(result);
-		    db.close();
-		  });
-		});
-	}
+		  var tab2 = req.params['table2'];
+		  var mappingTab = '';
+		  var mappingTab1 =  req.params['table1'] + "_" + req.params['table2'];
+	      var mappingTab2 = req.params['table2'] + "_" + req.params['table1'];
+	      dbo.listCollections().toArray(function (err, collectionNames) {
+      			if (err) {
+        			console.log(err);
+        			return;
+      			}
+          console.log(collectionNames);
+	      var array= collectionNames.filter( collec => collec.name=== mappingTab1)
+	       if(array.length > 0){
+	        	mappingTab = mappingTab1;
+	        }
+	       var array2= collectionNames.filter( collec => collec.name=== mappingTab2)
+	        if(array2.length > 0){
+	        	mappingTab = mappingTab2;
+	        }
+	        console.log(mappingTab);
+	        var query = {[tab]: req.params['id']};
+	        console.log(query);
+	        dbo.collection(mappingTab).find(query).toArray(function(err, result) {
+	    	if (err) throw err;
+	    	var arr = result.map(value => value[tab2])
+	    	for(let val of arr) {
+	    		console.log(val);
+	    		var query = {"_id": val.toString()};
+	    		console.log(query);
+	    		dbo.collection(tab2).find(query).toArray(function(err, ok) {
+		    	if (err) throw err;
+			    console.log(ok);
+			    db.close();
+			    });
+	    	}
+			});
+  			});
+    	});
+	    }
+	
 
 
 
@@ -476,5 +486,5 @@ module.exports = function (app,url,useDb) {
 	app.post("/api/:table", createTable);
 	app.get("/api", findAllTables);
 	app.get("/api/:table1/:id1/:table2/:id2", createMappingTable2)
-	app.get("/api/:table1/:id1/:table2", getMappingTables)
+	app.get("/api/:table1/:id/:table2", getMappingTables)
 }
