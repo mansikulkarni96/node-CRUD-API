@@ -399,7 +399,7 @@ module.exports = function (app,url,useDb) {
         		 var array= collectionNames.filter( collec => collec.name===req.params['table'])
         		 var body = req.body;
 
-				if(array.length ===0)
+				if(array.length === 0)
 	        		{
 	        			res.send(null);
 	        		}
@@ -422,13 +422,20 @@ module.exports = function (app,url,useDb) {
 		MongoClient.connect(url, function(err, db) {
   		if (err) throw err;
   		var dbo = db.db(useDb);
+  		var array= collectionNames.filter( collec => collec.name===req.params['table'])
+  		if(array.length === 0)
+	     {
+	       res.send(null);
+	     }
+        else{
   		dbo.collection(req.params['table']).drop(function(err, ok) {
     	if (err) throw err;
     	if (ok) console.log("Collection deleted");
 	    res.send("Collection deleted")			
 	    db.close();
 	  	});
-        });
+  	}
+    });
 	}
 
 	 function getMappingTables(req,resp){
