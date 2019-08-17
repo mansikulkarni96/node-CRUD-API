@@ -671,6 +671,6 @@ module.exports = function (app,url,useDb) {
 	app.get("/api/:table", findTable)
 	app.post("/api/:table", createTable);
 	app.get("/api", findAllTables);
-	app.get("/api/:table1/:id1/:table2/:id2", createMappingTable2)
+	app.post("/api/:table1/:id1/:table2/:id2", createMappingTable2)
 	app.get("/api/:table1/:id/:table2", getMappingTables)
 }
