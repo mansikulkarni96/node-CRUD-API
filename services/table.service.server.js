@@ -4,6 +4,12 @@ var mongo = require('mongodb');
 
 module.exports = function (app,url,useDb) {
 
+	function createUniqueId(){
+		const uuidv4 = require('uuid/v4');
+		return uuidv4(); 
+
+	}
+
 	function createTable(req, res) {
 		
 		var MongoClient = require('mongodb').MongoClient;
@@ -19,10 +25,16 @@ module.exports = function (app,url,useDb) {
         		console.log(collectionNames);
         		 var array= collectionNames.filter( collec => collec.name===req.params['table'])
         		 var body = req.body;
-
+        		 if (body['id'] == undefined){
+        		 	body['_id'] = createUniqueId();
+        		 }
+        		 else{
+        		 	body['_id'] = body['id'].toString();
+        		 }
+        		 console.log(body)
 				if(array.length ===0)
         		{
-        			var itemSchema = new mongoose.Schema({}, { strict: false, collection: req.params['table'] });
+        			var itemSchema = new mongoose.Schema({}, { strict: false,  _id: false , collection: req.params['table'] });
 					var Item = mongoose.model(req.params['table'], itemSchema);
 					var item = new Item(body);
 					item.save();
@@ -155,7 +167,7 @@ module.exports = function (app,url,useDb) {
 	        			res.send(null);
 	        		}
         		else{
-	  				var query = {"_id": mongo.ObjectId(req.params['id'])};
+	  				var query = {"_id": req.params['id']};
 	        			dbo.collection(req.params['table']).find(query).toArray(function(err, result) {
 	    				if (err) throw err;
 	    				console.log(result);  			
@@ -262,15 +274,20 @@ module.exports = function (app,url,useDb) {
 
 				if(array.length ===0)
 	        		{
+
 	        			res.send(null);
 	        		}
         		else{
-	  				var query = {"_id": mongo.ObjectId(req.params['id'])};
+
+	  				var query = {"_id": req.params['id']};
 	  				var newvalues = { $set: body};
 	        			dbo.collection(req.params['table']).updateOne(query, newvalues, function(err, result) {
+
+	        				console.log(JSON.stringify(result));
 	        			var  val = result['result']['nModified'];
 	        			if(val === 0)
 	        			{
+
 	        				res.send(null);
 	        			}
 	        			dbo.collection(req.params['table']).find(query).toArray(function(err, result) {
@@ -308,7 +325,7 @@ module.exports = function (app,url,useDb) {
 	        			res.send(null);
 	        		}
         		else{
-	  				var query = {"_id": mongo.ObjectId(req.params['id'])};
+	  				var query = {"_id": req.params['id']};
 	        			dbo.collection(req.params['table']).deleteOne(query, function(err, obj) {
 	    				if (err) throw err;
 	    				console.log("1 document deleted");  
@@ -335,35 +352,7 @@ module.exports = function (app,url,useDb) {
         });
 	}
 
-
-	function createMappingTables(req,resp){
-		console.log("Hello")
-		var MongoClient = require('mongodb').MongoClient;
-		MongoClient.connect(url, function(err, db) {
-		  if (err) throw err;
-		  var dbo = db.db(useDb);
-		  var tab = req.params['table1'];
-		  console.log(tab);
-		  dbo.collection(tab).aggregate([
-		    { $lookup:
-		       {
-		         from: req.params['table2'],
-		         localField: 'commentId',
-		         foreignField: 'id',
-		         as: 'user_new_table'
-		       }
-		     }
-		    ]).toArray(function(err, res) {
-		    if (err) throw err;
-		    console.log(req.params['id1'])
-		    var result = res.filter( item => ((item['_id'].toString() === req.params['id1'])))
-		    resp.send(result);
-		    db.close();
-		  });
-		});
-	}
-
-	function getMappingTables(req,resp){
+	 function getMappingTables(req,resp){
 		console.log("Hello")
 		var MongoClient = require('mongodb').MongoClient;
 		MongoClient.connect(url, function(err, db) {
@@ -379,7 +368,6 @@ module.exports = function (app,url,useDb) {
         			console.log(err);
         			return;
       			}
-          console.log(collectionNames);
 	      var array= collectionNames.filter( collec => collec.name=== mappingTab1)
 	       if(array.length > 0){
 	        	mappingTab = mappingTab1;
@@ -391,26 +379,37 @@ module.exports = function (app,url,useDb) {
 	        console.log(mappingTab);
 	        var query = {[tab]: req.params['id']};
 	        console.log(query);
-	        dbo.collection(mappingTab).find(query).toArray(function(err, result) {
+	        dbo.collection(mappingTab).find(query).toArray( function(err, result) {
 	    	if (err) throw err;
 	    	var arr = result.map(value => value[tab2])
-	    	for(let val of arr) {
-	    		console.log(val);
-	    		var query = {"_id": val.toString()};
+	    	var resultArray= [];
+	    
+	    	var count =0;
+	    	 for(let val of arr) {
+	    	 	
+	    		var obj = val.toString();
+	    		console.log(obj );
+	    		var query = {"_id":val};
 	    		console.log(query);
-	    		dbo.collection(tab2).find(query).toArray(function(err, ok) {
+	    		 dbo.collection(tab2).find(query).toArray(function(err, ok) {
 		    	if (err) throw err;
-			    console.log(ok);
-			    db.close();
+		    	resultArray.push( ok[0]);
+			    count ++;
+	    		 console.log("count is: ",arr.length);
+	    		 if(count ==arr.length)
+	    		 {
+	    		 	resp.send(resultArray)
+	    		 }
+	    		
 			    });
+
 	    	}
+	    	
 			});
   			});
     	});
 	    }
 	
-
-
 
 	function createMappingTable2(req, res) {
 			
@@ -435,8 +434,8 @@ module.exports = function (app,url,useDb) {
 	        			existingTable2 = true;
 	        		}
 	        		if(existingTable1 && existingTable2){
-	        		var mappingTab = '';
-	        		var mappingTab1 =  req.params['table1'] + "_" + req.params['table2'];
+	        		var mappingTab = req.params['table1'] + "_" + req.params['table2'];
+	        		var mappingTab1 = req.params['table1'] + "_" + req.params['table2'];
 	        		var mappingTab2 = req.params['table2'] + "_" + req.params['table1'];
 	        		var mapTableExists = false;
 	        		var array= collectionNames.filter( collec => collec.name=== mappingTab1)
@@ -449,16 +448,18 @@ module.exports = function (app,url,useDb) {
 	        			mapTableExists = true;
 	        			mappingTab = mappingTab2;
 	        		}
+	        		 
 	        		 var tab1= req.params['table1']
-	        		 console.log(tab1);
+	        		 
 	        		 var id1 = req.params['id1']
 	        		 var tab2= req.params['table2']
 	        		 var id2 = req.params['id2']
-	        		 var body= {[tab1]: id1, [tab2] : id2};
+	        		 var body= {'_id':createUniqueId(),[tab1]: id1, [tab2] : id2};
 	        		
 					if(!mapTableExists)
 	        		{
-	        			var itemSchema = new mongoose.Schema({}, { strict: false, collection: mappingTab });
+	        			console.log(mappingTab);
+	        			var itemSchema = new mongoose.Schema({}, { strict: false,  _id: false, collection: mappingTab });
 						var Item = mongoose.model(mappingTab, itemSchema);
 						var item = new Item(body);
 						item.save();

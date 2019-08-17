@@ -1,14 +1,16 @@
 var express = require('express')
 var app = express()
 var mongoose = require('mongoose')
-var url ='mongodb://mansi:mansi1234@ds259586.mlab.com:59586/heroku_lh1fzvtf';
-var useDb = 'heroku_lh1fzvtf';
+// var url ='mongodb://mansi:mansi1234@ds259586.mlab.com:59586/heroku_lh1fzvtf';
+// var useDb = 'heroku_lh1fzvtf';
+var url ='mongodb://localhost:27017/';
+var useDb = 'CRUD-tool';
 //mongoose.connect('mongodb://heroku_674vnd6l:qvie32tkbjru83t21rsoml39ml@ds019638.mlab.com:19638/heroku_674vnd6l',
  //{useNewUrlParser: true});
 
-//var conn = mongoose.connect('mongodb://localhost:27017/CRUD-tool', {useNewUrlParser: true});
-mongoose.connect('mongodb://mansi:mansi1234@ds259586.mlab.com:59586/heroku_lh1fzvtf',
- {useNewUrlParser: true});
+var conn = mongoose.connect('mongodb://localhost:27017/CRUD-tool', {useNewUrlParser: true});
+// mongoose.connect('mongodb://mansi:mansi1234@ds259586.mlab.com:59586/heroku_lh1fzvtf',
+//  {useNewUrlParser: true});
 
 var pageSchema = mongoose.Schema({
 	title: String
