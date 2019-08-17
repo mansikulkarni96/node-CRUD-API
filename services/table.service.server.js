@@ -111,43 +111,6 @@ module.exports = function (app,url,useDb) {
 		});
 	}
 
-
-	/*function findByPredicates(req,res) {
-		var MongoClient = require('mongodb').MongoClient;
-		MongoClient.connect(url, function(err, db) {
-  		if (err) throw err;
-  		var dbo = db.db(useDb);
-  		dbo.listCollections().toArray(function (err, collectionNames) {
-      			if (err) {
-        			console.log(err);
-        			return;
-      			}
-        		console.log(collectionNames);
-        		 var array= collectionNames.filter( collec => collec.name===req.params['table'])
-        		 var body = req.body;
-
-				if(array.length ===0)
-        		{
-        			res.send(null);
-        		}
-        		else{
-        			var query = {};
-					var field = "salary";
-					var operator= 2000;
-					//query[field] <= operator;
-        			dbo.collection(req.params['table']).find(query).toArray(function(err, result) {
-    				if (err) throw err;
-    				console.log(result);
-    				db.close();
-    				res.send(result);
-  					});
-        		}	
-			});
-
-		});
-	}*/
-
-
 	function findTableRecord(req,res) {
 		var MongoClient = require('mongodb').MongoClient;
 		MongoClient.connect(url, function(err, db) {
@@ -482,23 +445,7 @@ module.exports = function (app,url,useDb) {
 	    	else
 	    	{
 	    		twoTablePredicates(query,tab2,req,resp);
-	    	}
-	    	 /*for(let val of arr) {
-	    		var obj = val.toString();
-	    		console.log(obj );
-	    		var query = {"_id":val};
-	    		console.log(query);
-	    		dbo.collection(tab2).find(query).toArray(function(err, ok) {
-		    	if (err) throw err;
-		    	resultArray.push( ok[0]);
-			    count ++;
-	    		console.log("count is: ",arr.length);
-	    		if(count ==arr.length)
-	    		{
-	    			resp.send(resultArray)
-	    		}
-			    });
-	    	}*/	
+	    	}	
 			});
   			});
     	});
@@ -663,8 +610,6 @@ module.exports = function (app,url,useDb) {
 
 	app.delete("/api/:table", deleteTable)
 	app.delete("/api/:table/:id", deleteTableRecord)
-	app.delete("/api/:table1/:id1/:table2/:id2", deleteMultiTableRecord)
-	app.delete("/api/:table1/:id1/:table2", deleteMultiTableFirstTable)
 	app.get("/api/:table/:id", findTableRecord)
 	app.put("/api/:table", findByPredicates)
 	app.put("/api/:table/:id", updateTableRecord)
@@ -673,4 +618,7 @@ module.exports = function (app,url,useDb) {
 	app.get("/api", findAllTables);
 	app.post("/api/:table1/:id1/:table2/:id2", createMappingTable2)
 	app.get("/api/:table1/:id/:table2", getMappingTables)
+	app.delete("/api/:table1/:id1/:table2/:id2", deleteMultiTableRecord)
+	app.delete("/api/:table1/:id1/:table2", deleteMultiTableFirstTable)
+
 }
