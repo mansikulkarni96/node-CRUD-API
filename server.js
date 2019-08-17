@@ -2,7 +2,7 @@ var express = require('express')
 var app = express()
 var mongoose = require('mongoose')
 var url ='mongodb://mansi:mansi1234@ds259586.mlab.com:59586/heroku_lh1fzvtf';
-var useDb = 'CRUD-tool';
+var useDb = 'heroku_lh1fzvtf';
 //mongoose.connect('mongodb://heroku_674vnd6l:qvie32tkbjru83t21rsoml39ml@ds019638.mlab.com:19638/heroku_674vnd6l',
  //{useNewUrlParser: true});
 
