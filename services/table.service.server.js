@@ -513,9 +513,57 @@ module.exports = function (app,url,useDb) {
   	});
 
 	}
+
+	function deleteMultiTableFirstTable(req,res){
+
+		var MongoClient = require('mongodb').MongoClient;
+		MongoClient.connect(url, function(err, db) {
+  		if (err) throw err;
+  		var dbo = db.db(useDb);
+  		dbo.listCollections().toArray(function (err, collectionNames) {
+	      	if (err) {
+	        	console.log(err);
+	       		return;
+	   		}
+  		var mappingTab = req.params['table1'] + "_" + req.params['table2'];
+	    var mappingTab1 = req.params['table1'] + "_" + req.params['table2'];
+	    var mappingTab2 = req.params['table2'] + "_" + req.params['table1'];
+	    var mapTableExists = false;
+	   	var array= collectionNames.filter( collec => collec.name=== mappingTab1)
+	    if(array.length > 0){
+	        mapTableExists = true;
+	        mappingTab = mappingTab1;
+	    }
+	    var array2= collectionNames.filter( collec => collec.name=== mappingTab2)
+	    if(array2.length > 0){
+	        mapTableExists = true;
+	        mappingTab = mappingTab2;
+	    }
+	    if(mapTableExists)
+	    {
+	    	var query = {[req.params['table1']]: req.params['id1']};
+	    	console.log(query);
+	    	dbo.collection(mappingTab).deleteMany(query, function(err, obj) {
+	    				if (err) throw err;
+	    				  
+	    				res.send("documents deleted")			
+	    				db.close();
+	  					});
+
+	    }
+	    else
+	    {
+	    	res.send(null);
+	    }
+	});
+  	});
+
+	}
+
 	app.delete("/api/:table", deleteTable)
 	app.delete("/api/:table/:id", deleteTableRecord)
 	app.delete("/api/:table1/:id1/:table2/:id2", deleteMultiTableRecord)
+	app.delete("/api/:table1/:id1/:table2", deleteMultiTableFirstTable)
 	app.get("/api/:table/:id", findTableRecord)
 	app.put("/api/:table", findByPredicates)
 	app.put("/api/:table/:id", updateTableRecord)
