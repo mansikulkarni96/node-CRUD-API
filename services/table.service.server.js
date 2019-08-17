@@ -353,7 +353,6 @@ module.exports = function (app,url,useDb) {
 	}
 
 	 function getMappingTables(req,resp){
-		console.log("Hello")
 		var MongoClient = require('mongodb').MongoClient;
 		MongoClient.connect(url, function(err, db) {
 		  if (err) throw err;
@@ -376,35 +375,29 @@ module.exports = function (app,url,useDb) {
 	        if(array2.length > 0){
 	        	mappingTab = mappingTab2;
 	        }
-	        console.log(mappingTab);
 	        var query = {[tab]: req.params['id']};
 	        console.log(query);
 	        dbo.collection(mappingTab).find(query).toArray( function(err, result) {
 	    	if (err) throw err;
 	    	var arr = result.map(value => value[tab2])
 	    	var resultArray= [];
-	    
 	    	var count =0;
 	    	 for(let val of arr) {
-	    	 	
 	    		var obj = val.toString();
 	    		console.log(obj );
 	    		var query = {"_id":val};
 	    		console.log(query);
-	    		 dbo.collection(tab2).find(query).toArray(function(err, ok) {
+	    		dbo.collection(tab2).find(query).toArray(function(err, ok) {
 		    	if (err) throw err;
 		    	resultArray.push( ok[0]);
 			    count ++;
-	    		 console.log("count is: ",arr.length);
-	    		 if(count ==arr.length)
-	    		 {
-	    		 	resp.send(resultArray)
-	    		 }
-	    		
+	    		console.log("count is: ",arr.length);
+	    		if(count ==arr.length)
+	    		{
+	    			resp.send(resultArray)
+	    		}
 			    });
-
-	    	}
-	    	
+	    	}	
 			});
   			});
     	});
@@ -412,9 +405,7 @@ module.exports = function (app,url,useDb) {
 	
 
 	function createMappingTable2(req, res) {
-			
 			var MongoClient = require('mongodb').MongoClient;
-			
 			MongoClient.connect(url, function(err, db) {
 	  			if (err) throw err;
 	  			var dbo = db.db(useDb);
@@ -478,8 +469,53 @@ module.exports = function (app,url,useDb) {
 			});
 		}
 
+	function deleteMultiTableRecord(req,res){
+
+		var MongoClient = require('mongodb').MongoClient;
+		MongoClient.connect(url, function(err, db) {
+  		if (err) throw err;
+  		var dbo = db.db(useDb);
+  		dbo.listCollections().toArray(function (err, collectionNames) {
+	      	if (err) {
+	        	console.log(err);
+	       		return;
+	   		}
+  		var mappingTab = req.params['table1'] + "_" + req.params['table2'];
+	    var mappingTab1 = req.params['table1'] + "_" + req.params['table2'];
+	    var mappingTab2 = req.params['table2'] + "_" + req.params['table1'];
+	    var mapTableExists = false;
+	   	var array= collectionNames.filter( collec => collec.name=== mappingTab1)
+	    if(array.length > 0){
+	        mapTableExists = true;
+	        mappingTab = mappingTab1;
+	    }
+	    var array2= collectionNames.filter( collec => collec.name=== mappingTab2)
+	    if(array2.length > 0){
+	        mapTableExists = true;
+	        mappingTab = mappingTab2;
+	    }
+	    if(mapTableExists)
+	    {
+	    	var query = {[req.params['table1']]: req.params['id1'],[req.params['table2']]: req.params['id2'] };
+	    	dbo.collection(mappingTab).deleteOne(query, function(err, obj) {
+	    				if (err) throw err;
+	    				console.log("1 document deleted");  
+	    				res.send("document deleted")			
+	    				db.close();
+	  					});
+
+	    }
+	    else
+	    {
+	    	res.send(null);
+	    }
+	});
+  	});
+
+	}
 	app.delete("/api/:table", deleteTable)
 	app.delete("/api/:table/:id", deleteTableRecord)
+	app.delete("/api/:table1/:id1/:table2/:id2", deleteMultiTableRecord)
 	app.get("/api/:table/:id", findTableRecord)
 	app.put("/api/:table", findByPredicates)
 	app.put("/api/:table/:id", updateTableRecord)
